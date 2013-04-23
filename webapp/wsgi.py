@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 
+import datetime
 import json
 import os
 
@@ -87,9 +88,20 @@ def quarterly_review_statistics():
 def index():
     return redirect(url_for('weekly'))
 
+def current_year():
+    """Return the current year"""
+    d = datetime.datetime.now()
+    return d.year
+
+def current_quarter():
+    """Return the current quarter"""
+    d = datetime.datetime.now()
+    return (d.month-1)//3+1
+
 @application.route("/weekly")
 def weekly():
-    return render_template('weekly.html')
+    quarter = "%d-%.2d-01" % (current_year(), (current_quarter()-1)*3+1)
+    return render_template('weekly.html', current_quarter_start=quarter)
 
 @application.route("/quarterly")
 def quarterly():

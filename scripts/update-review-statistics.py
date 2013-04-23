@@ -7,7 +7,7 @@ import requests
 import sys
 
 
-SERVER_URL="http://127.0.0.1:5000"
+SERVER_URL="http://localhost:5000"
 SERVER_KEY="SECRET"
 
 PRODUCT="mozilla.org"
@@ -20,7 +20,7 @@ def check_bugzilla_credentials(credentials):
     headers = { "Accepts": "application/json" }
     r = requests.get(url, params=params, headers=headers)
     r.raise_for_status()
-    
+
 
 def fetch_bug_ids(product, component, changed_after=None, changed_before=None, changed_field=None, resolution=None, status=None, advanced=None, credentials=None):
     headers = { "Accepts": "application/json" }
@@ -50,15 +50,22 @@ def fetch_bug_ids(product, component, changed_after=None, changed_before=None, c
     json = requests.get(url, params=params, headers=headers).json()
     return [int(bug['id']) for bug in json['bugs']]
 
+def current_year():
+    """Return the current year"""
+    d = datetime.datetime.now()
+    return d.year
 
 def current_quarter():
     """Return the current quarter"""
     d = datetime.datetime.now()
     return (d.month-1)//3+1
 
+def quarter_spec(year, quarter):
+    return "%dQ%d" % (year, quarter)
+
 def current_quarter_spec():
     d = datetime.datetime.now()
-    return "%dQ%d" % (d.year, (d.month-1)//3+1)
+    return quarter_spec(d.year, (d.month-1)//3+1)
 
 def quarter_date_range(year, quarter):
     """Return the bugzilla date range for the specified year and quarter"""
@@ -130,18 +137,18 @@ if __name__ == "__main__":
 
     check_bugzilla_credentials(credentials)
 
-    print "COLLECTING QUARTERLY STATISTICS"
+    def collect_and_submit(year, quarter):
+        print "COLLECTING QUARTERLY STATISTICS for %d/%d" % (year, quarter)
+        date_range = quarter_date_range(year, quarter)
+        created_this_quarter = count_created_for_date_range(date_range, credentials)
+        print "* CREATED   %4d" % created_this_quarter
+        completed_this_quarter = count_completed_for_date_range(date_range, credentials)
+        print "* COMPLETED %4d" % completed_this_quarter
+        print "SUBMITTING TO SERVER"
+        submit_quarterly_counts(SERVER_URL, SERVER_KEY, quarter_spec(year, quarter), created_this_quarter, completed_this_quarter)
+        print "* OK"
 
-    created_this_quarter = count_created_for_date_range(current_quarter_date_range(), credentials)
-    print "* CREATED THIS QUARTER   %4d" % created_this_quarter
-    completed_this_quarter = count_completed_for_date_range(current_quarter_date_range(), credentials)
-    print "* COMPLETED THIS QUARTER %4d" % completed_this_quarter
-
-    print "SUBMITTING TO SERVER"
-    submit_quarterly_counts(SERVER_URL, SERVER_KEY, current_quarter_spec(), created_this_quarter, completed_this_quarter)
-    print "* OK"
-
-    sys.exit(1)
+    collect_and_submit(current_year(), current_quarter());
 
     print "COLLECTING WEEKLY STATISTICS"
 
@@ -163,4 +170,3 @@ if __name__ == "__main__":
     print "SUBMITTING TO SERVER"
     submit_weekly_counts(SERVER_URL, SERVER_KEY, datetime.datetime.now(), completed_this_quarter, total_outstanding, ready_for_review, without_risk_rating, without_deadline)
     print "* OK"
-
