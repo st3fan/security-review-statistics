@@ -9,7 +9,7 @@ from flask import Flask, request, render_template, jsonify, redirect, url_for
 from pymongo import MongoClient
 
 
-KEY="SECRET"
+KEY="CHANGEME"
 
 
 application = Flask(__name__)
@@ -19,18 +19,18 @@ def vcap_services():
     if os.getenv('VCAP_SERVICES'):
         return json.loads(os.getenv('VCAP_SERVICES'))
     else:
-        return { "mongodb-1.8": [{ "credentials": { "db": "db", "host": "127.0.0.1", "port": 27017 } }] }
+        return { "mongodb": [{ "credentials": { "db": "db", "host": "127.0.0.1", "port": 27017 } }] }
 
 
 def connect():
     services = vcap_services()
-    credentials = services["mongodb-1.8"][0]["credentials"]
+    credentials = services["mongodb"][0]["credentials"]
     if 'username' in credentials:
         url = "mongodb://%(username)s:%(password)s@%(host)s:%(port)d/%(db)s" % credentials
     else:
         url = "mongodb://%(host)s:%(port)d" % credentials
     client = MongoClient(url)
-    return client[services["mongodb-1.8"][0]["credentials"]["db"]]
+    return client[services["mongodb"][0]["credentials"]["db"]]
 
 
 @application.route('/submit-weekly-review-statistics', methods=['POST'])

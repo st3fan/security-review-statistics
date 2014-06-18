@@ -7,8 +7,8 @@ import requests
 import sys
 
 
-SERVER_URL="http://localhost:5000"
-SERVER_KEY="SECRET"
+SERVER_URL="https://security-review-statistics.paas.allizom.org"
+SERVER_KEY="CHANGEME"
 
 PRODUCT="mozilla.org"
 COMPONENT="Security Assurance: Review Request"
